@@ -1,0 +1,9 @@
+name=One Way Out
+author=Marco Carandente
+description=Crank to your only way out
+bundleID=com.amido.OneWayOut
+version=1.0
+buildNumber=100
+imagePath=SystemAssets
+pdxversion=10900
+buildtime=700487712
