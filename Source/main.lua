@@ -9,7 +9,7 @@ import "CoreLibs/ui"
 local gfx <const> = playdate.graphics
 local geometry <const> = playdate.geometry
 gfx.setBackgroundColor(gfx.kColorWhite)
-
+playdate.display.setRefreshRate(50)
 local crankIndicatorShowing = false
 
 playdate.resetElapsedTime()
@@ -20,12 +20,16 @@ local currentRadius = 50
 local playerPosition = geometry.point.new(220,120)
 local circleCenter = geometry.point.new(200,120)
 local playerSpeed = geometry.vector2D.new(0,0)
-local playerSpin = 0
+local playerSpinSpeed = 0
+local currentOpeningSize = 20
 local gravity = 0.2
 local playerRadius = 10
 local playerRotation = 0
 local circleLineWidth = 5
 local distanceFromCenter = 0
+local grip = .8
+local contactFriction = .6
+local airFriction = .8
 
 function playdate.update()
     gfx.clear()
@@ -36,13 +40,14 @@ function playdate.update()
     checkCrank()
     drawCircle()
     updatePlayerPosition()
+    updatePlayerSpeed()
     drawPlayer()
 end
 
 function drawCircle()
     gfx.setLineWidth(circleLineWidth)
     gfx.setStrokeLocation(gfx.kStrokeInside)
-    gfx.drawArc(circleCenter.x, circleCenter.y, currentRadius, playdate.getCrankPosition()+20,playdate.getCrankPosition()+340)
+    gfx.drawArc(circleCenter.x, circleCenter.y, currentRadius, playdate.getCrankPosition()+currentOpeningSize,playdate.getCrankPosition()+(360-currentOpeningSize))
 end
 
 function checkCommands()
@@ -80,13 +85,34 @@ function updatePlayerPosition()
         correctionDirectionVector = playerPosition - circleCenter
         playerPosition.x = playerPosition.x + (correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))
         playerPosition.y = playerPosition.y + (correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))
+        
+        playerSpinSpeed += playdate.getCrankChange() * grip
     end
+end
+
+function updatePlayerSpeed()
     
+    if (checkCollision()) then
+        playerSpinSpeed *= contactFriction
+        
+        -- denoising speed while colliding, otherwise it never stops
+        if playerSpeed.x < .1 then
+            playerSpeed.x = 0
+        end
+        if playerSpeed.y < .1 then
+            playerSpeed.y = 0
+        end
+        
+    else
+        playerSpinSpeed *= airFriction
+    end
     playerSpeed.y += playdate.getElapsedTime()*gravity
+    
 end
 
 function checkCollision()
     distanceFromCenter = playerPosition:distanceToPoint(circleCenter)
+    
     if  distanceFromCenter + playerRadius > currentRadius then
         return true
     else
