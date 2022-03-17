@@ -1,13 +1,16 @@
+
 import "CoreLibs/graphics"
 import "CoreLibs/timer"
 import "CoreLibs/sprites"
 import "CoreLibs/crank"
 import "CoreLibs/math"
 import "CoreLibs/ui"
+import "circleMath"
 
 --setup
 local gfx <const> = playdate.graphics
 local geometry <const> = playdate.geometry
+
 gfx.setBackgroundColor(gfx.kColorWhite)
 playdate.display.setRefreshRate(50)
 local crankIndicatorShowing = false
@@ -18,11 +21,12 @@ playdate.resetElapsedTime()
 --gameplay
 local currentRadius = 50
 local playerPosition = geometry.point.new(180,100)
+local previousPlayerPosition =  playerPosition:copy()
 local circleCenter = geometry.point.new(200,120)
 local playerSpeed = geometry.vector2D.new(0,0)
 local playerSpinSpeed = 0
 local currentOpeningSize = 20
-local gravity = 0.25
+local gravity = 200
 local playerRadius = 10
 local playerRotation = 0
 local circleLineWidth = 5
@@ -34,6 +38,7 @@ local bounceElasticity = .96
 local airFriction = .995
 local collidedThisFrame = false
 
+
 function playdate.update()
     gfx.clear()
     playdate.drawFPS(0,0)
@@ -41,12 +46,13 @@ function playdate.update()
     collidedThisFrame = false
     previousPlayerPosition = playerPosition:copy()
     --checkCommands()
+    debugMovePlayerWithbuttons()
     checkCrank()
     drawCircle()
     updatePlayerPosition()
     updatePlayerSpeed()
-    debugMovePlayerWithbuttons()
     drawPlayer()
+    playdate.resetElapsedTime()
 end
 
 function drawCircle()
@@ -89,10 +95,47 @@ function updatePlayerPosition()
     playerPosition.x += playerSpeed.x * playdate.getElapsedTime()
     if checkCollision() then
         collidedThisFrame = true
-        -- case collision with line circle
-        correctionDirectionVector = playerPosition - circleCenter
-        playerPosition.x = playerPosition.x + (correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))
-        playerPosition.y = playerPosition.y + (correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))  
+        
+        -- iterative method
+        local currentSegment = geometry.lineSegment.new(previousPlayerPosition.x,previousPlayerPosition.y,playerPosition.x,playerPosition.y)
+        local midpoint = currentSegment:midPoint()
+        for i = 10, 1, 1
+        do
+            midpoint = currentSegment:midPoint()
+            if (checkCircleCollision(circleCenter, currentRadius, midpoint)) then
+                currentSegment = geometry.lineSegment.new(previousPlayerPosition.x,previousPlayerPosition.y,midpoint.x,midpoint.y)
+            else
+                currentSegment = geometry.lineSegment.new(midpoint.x,midpoint.y,PlayerPosition.x,PlayerPosition.y)
+            end
+        end
+        playerPosition = midpoint:copy()
+        print(playerSpeed)
+        
+        
+        -- using mlib
+        --collision, newPosX, newPosY = getCircleSegmentIntersection(circleCenter.x, circleCenter.y, currentRadius+circleLineWidth, previousPlayerPosition.x, previousPlayerPosition.y, playerPosition.x, playerPosition.y)
+        
+        
+        --print(collision)
+        --if collision then
+        --    print (collision)
+        --    if(collision=="tangent" or collision == "enclosed") then
+        --        playerPosition.x = newPosX
+        --       playerPosition.y = newPosY
+        --   end
+            
+        --end
+        
+        
+        -- brutal towards circle center
+        
+        
+        --correctionDirectionVector = playerSpeed:normalized()
+        --playerPosition = correctionDirectionVector * dotProduct -(playerRadius - (currentRadius- distanceFromCenter) 
+        
+        --playerPosition = correctionDirectionVector 
+        --playerPosition.x = playerPosition.x + (correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))
+        --playerPosition.y = playerPosition.y + (correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))  
     end
     
     playerRotation += playerSpinSpeed * playdate.getElapsedTime()
@@ -102,29 +145,38 @@ end
 function updatePlayerSpeed()
 
     if (collidedThisFrame) then
-        
         -- case collision with line circle
-        print("in comes: ",playerSpeed)
         originalNormalVector = circleCenter - playerPosition
         normalizedNormal = originalNormalVector:normalized()
         playerSpeed = playerSpeed - (normalizedNormal:scaledBy((2 * normalizedNormal:dotProduct(playerSpeed))))
         playerSpeed *= bounceElasticity
-        print("out goes: ",playerSpeed)
-    
         playerSpinSpeed += playdate.getCrankChange() * grip / currentRadius * playerRadius
         playerSpinSpeed -= contactFriction * playdate.getElapsedTime()
         
     else
         playerSpinSpeed -= airFriction * playdate.getElapsedTime()
     end
-    playerSpeed.y += playdate.getElapsedTime()*gravity
+    playerSpeed.y += playdate.getElapsedTime() * gravity
+    --print("player speed: ", playerSpeed)
+    --print("player position: ", playerPosition)
+    --print("deltatime", playdate.getElapsedTime())
     
 end
 
+
+function checkCircleCollision (center, radius, point)
+    distanceFromCenter = point:distanceToPoint(center) 
+    if  distanceFromCenter + playerRadius > currentRadius - circleLineWidth then
+        return true
+    else
+        return false
+    end
+end
+    
 function checkCollision()
     
     -- outline circle detection
-    distanceFromCenter = playerPosition:distanceToPoint(circleCenter) + circleLineWidth    
+    distanceFromCenter = playerPosition:distanceToPoint(circleCenter) 
     if  distanceFromCenter + playerRadius > currentRadius - circleLineWidth then
         return true
     else
@@ -138,25 +190,25 @@ function drawPlayer()
 end
 
 function debugMovePlayerWithbuttons()
-   if playdate.buttonIsPressed(playdate.kButtonUp) then
-       playerSpeed.dy -= 10
+   if playdate.buttonJustPressed(playdate.kButtonUp) then
+       playerSpeed.dy -= 100
    end
-   if playdate.buttonIsPressed(playdate.kButtonDown) then
-       playerPosition.y += 10
-       if(playerPosition.y > 280) then
-           playerPosition.y = 280
-       end
+   if playdate.buttonJustPressed(playdate.kButtonDown) then
+        playerSpeed.dy += 100
+
    end
-   if playdate.buttonIsPressed(playdate.kButtonLeft) then
-       playerPosition.x -= 10
-       if(playerPosition.x < -50) then
-           playerPosition.x = -50
-       end
+   if playdate.buttonJustPressed(playdate.kButtonLeft) then
+        playerSpeed.dx -= 100
+   
    end
-   if playdate.buttonIsPressed(playdate.kButtonRight) then
-       playerPosition.x += 10
-       if(playerPosition.x > 450) then
-           playerPosition.x = 450
-       end
+   if playdate.buttonJustPressed(playdate.kButtonRight) then
+     playerSpeed.dx += 100
+     
    end 
 end
+
+function playdate.gameWillResume()
+    playdate.resetElapsedTime()
+end
+
+
