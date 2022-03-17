@@ -111,31 +111,6 @@ function updatePlayerPosition()
         playerPosition = midpoint:copy()
         print(playerSpeed)
         
-        
-        -- using mlib
-        --collision, newPosX, newPosY = getCircleSegmentIntersection(circleCenter.x, circleCenter.y, currentRadius+circleLineWidth, previousPlayerPosition.x, previousPlayerPosition.y, playerPosition.x, playerPosition.y)
-        
-        
-        --print(collision)
-        --if collision then
-        --    print (collision)
-        --    if(collision=="tangent" or collision == "enclosed") then
-        --        playerPosition.x = newPosX
-        --       playerPosition.y = newPosY
-        --   end
-            
-        --end
-        
-        
-        -- brutal towards circle center
-        
-        
-        --correctionDirectionVector = playerSpeed:normalized()
-        --playerPosition = correctionDirectionVector * dotProduct -(playerRadius - (currentRadius- distanceFromCenter) 
-        
-        --playerPosition = correctionDirectionVector 
-        --playerPosition.x = playerPosition.x + (correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))
-        --playerPosition.y = playerPosition.y + (correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter)))  
     end
     
     playerRotation += playerSpinSpeed * playdate.getElapsedTime()
