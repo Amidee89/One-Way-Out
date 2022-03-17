@@ -5,7 +5,6 @@ import "CoreLibs/sprites"
 import "CoreLibs/crank"
 import "CoreLibs/math"
 import "CoreLibs/ui"
-import "circleMath"
 
 --setup
 local gfx <const> = playdate.graphics
@@ -34,7 +33,7 @@ local playerLineWidth = 3
 local distanceFromCenter = 0
 local grip = .8
 local contactFriction = .90
-local bounceElasticity = .96
+local bounceElasticity = .8
 local airFriction = .995
 local collidedThisFrame = false
 
@@ -94,8 +93,7 @@ function updatePlayerPosition()
     playerPosition.y +=  playerSpeed.y * playdate.getElapsedTime()
     playerPosition.x += playerSpeed.x * playdate.getElapsedTime()
     if checkCollision() then
-        collidedThisFrame = true
-        
+        collidedThisFrame = true      
         -- iterative method
         local currentSegment = geometry.lineSegment.new(previousPlayerPosition.x,previousPlayerPosition.y,playerPosition.x,playerPosition.y)
         local midpoint = currentSegment:midPoint()
