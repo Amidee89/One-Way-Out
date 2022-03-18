@@ -5,7 +5,7 @@
   },
   "extensionTemplate" : "simulator",
   "extensionValues" : {
+    "playdate.debugRequest" : "attach",
     "playdate.main-path" : "Source"
-  },
-  "identifier" : "C1D611F1-1D9B-40EC-ACBF-1D727EA76F74"
+  }
 }

@@ -110,9 +110,7 @@ function updatePlayerPosition()
             playerPosition = previousPlayerPosition:copy()
         else
             playerPosition = midpoint:copy()
-        end
-        print(playerSpeed)
-        
+        end        
     end
     
     playerRotation += playerSpinSpeed * playdate.getElapsedTime()
@@ -128,15 +126,15 @@ function updatePlayerSpeed()
         playerSpeed = playerSpeed - (normalizedNormal:scaledBy((2 * normalizedNormal:dotProduct(playerSpeed))))
         playerSpeed *= bounceElasticity
         playerSpinSpeed += playdate.getCrankChange() * grip / currentRadius * playerRadius
-        playerSpinSpeed -= contactFriction * playdate.getElapsedTime()
-        
+        playerSpinSpeed *= contactFriction 
     else
-        playerSpinSpeed -= airFriction * playdate.getElapsedTime()
+        playerSpinSpeed *= airFriction
     end
     playerSpeed.y += playdate.getElapsedTime() * gravity
     --print("player speed: ", playerSpeed)
     --print("player position: ", playerPosition)
     --print("deltatime", playdate.getElapsedTime())
+    print(playerSpinSpeed)
     
 end
 
@@ -164,6 +162,7 @@ end
 function drawPlayer()
     gfx.setLineWidth(playerLineWidth)
     gfx.drawCircleAtPoint(playerPosition.x, playerPosition.y, playerRadius)
+    gfx.drawLine(playerPosition.x,playerPosition.y, playerPosition.x+playerRadius*math.cos(playerRotation),playerPosition.y+playerRadius*math.sin(playerRotation))
 end
 
 function debugMovePlayerWithbuttons()
