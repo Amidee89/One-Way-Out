@@ -106,7 +106,11 @@ function updatePlayerPosition()
                 currentSegment = geometry.lineSegment.new(midpoint.x,midpoint.y,PlayerPosition.x,PlayerPosition.y)
             end
         end
-        playerPosition = midpoint:copy()
+        if(checkCircleCollision(circleCenter, currentRadius, midpoint))then
+            playerPosition = previousPlayerPosition:copy()
+        else
+            playerPosition = midpoint:copy()
+        end
         print(playerSpeed)
         
     end
