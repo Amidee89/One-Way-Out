@@ -31,10 +31,10 @@ local playerRotation = 0
 local circleLineWidth = 5
 local playerLineWidth = 3
 local distanceFromCenter = 0
-local grip = .8
-local contactFriction = .90
+local collisionRelocationMagnitude = 0
+local contactFriction = .8
 local bounceElasticity = .8
-local airFriction = .995
+local airFriction = .9
 local collidedThisFrame = false
 
 
@@ -43,6 +43,7 @@ function playdate.update()
     playdate.drawFPS(0,0)
     playdate.timer.updateTimers()
     collidedThisFrame = false
+    collisionRelocationMagnitude = 0
     previousPlayerPosition = playerPosition:copy()
     --checkCommands()
     debugMovePlayerWithbuttons()
@@ -124,18 +125,21 @@ function updatePlayerSpeed()
         originalNormalVector = circleCenter - playerPosition
         normalizedNormal = originalNormalVector:normalized()
         playerSpeed = playerSpeed - (normalizedNormal:scaledBy((2 * normalizedNormal:dotProduct(playerSpeed))))
+        print(normalizedNormal:rightNormal())
+        
+        playerSpeed.x -= playerSpinSpeed * normalizedNormal:rightNormal().dx * contactFriction
+        playerSpeed.y -= playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
+          
         playerSpeed *= bounceElasticity
-        playerSpinSpeed += playdate.getCrankChange() * grip / currentRadius * playerRadius
-        playerSpinSpeed *= contactFriction 
+        
+        
+        playerSpinSpeed -= playdate.getCrankChange() * contactFriction / currentRadius * playerRadius
+        playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed
+        
     else
-        playerSpinSpeed *= airFriction
+        playerSpinSpeed -= airFriction * playdate.getElapsedTime() * playerSpinSpeed
     end
-    playerSpeed.y += playdate.getElapsedTime() * gravity
-    --print("player speed: ", playerSpeed)
-    --print("player position: ", playerPosition)
-    --print("deltatime", playdate.getElapsedTime())
-    print(playerSpinSpeed)
-    
+    playerSpeed.y += playdate.getElapsedTime() * gravity   
 end
 
 
