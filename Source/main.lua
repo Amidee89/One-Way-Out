@@ -33,10 +33,11 @@ local playerLineWidth = 3
 local distanceFromCenter = 0
 local collisionRelocationMagnitude = 0
 local contactFriction = .8
-local bounceElasticity = .8
+local bounceElasticity = .9
 local airFriction = .9
 local collidedThisFrame = false
-
+local terminalVelocity = 400
+local terminalSpinning = 400
 
 function playdate.update()
     gfx.clear()
@@ -108,7 +109,11 @@ function updatePlayerPosition()
             end
         end
         if(checkCircleCollision(circleCenter, currentRadius, midpoint))then
-            playerPosition = previousPlayerPosition:copy()
+            playerPosition = midpoint:copy()
+            -- shift towards circle center 
+            correctionDirectionVector = playerPosition - circleCenter
+            playerPosition.x = playerPosition.x + (correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth)))
+            playerPosition.y = playerPosition.y + (correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth )))  
         else
             playerPosition = midpoint:copy()
         end        
@@ -120,26 +125,43 @@ end
 
 function updatePlayerSpeed()
 
-    if (collidedThisFrame) then
-        -- case collision with line circle
+   if (collidedThisFrame) then
+        -- case collision with line circle, bouncing
         originalNormalVector = circleCenter - playerPosition
         normalizedNormal = originalNormalVector:normalized()
         playerSpeed = playerSpeed - (normalizedNormal:scaledBy((2 * normalizedNormal:dotProduct(playerSpeed))))
-        print(normalizedNormal:rightNormal())
         
-        playerSpeed.x -= playerSpinSpeed * normalizedNormal:rightNormal().dx * contactFriction
-        playerSpeed.y -= playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
-          
+        -- adding speed from spinning speed and reducing 
+        playerSpeed.x += playerSpinSpeed * normalizedNormal:rightNormal().dx * contactFriction
+        playerSpeed.y += playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
+        playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed
+
         playerSpeed *= bounceElasticity
         
         
         playerSpinSpeed -= playdate.getCrankChange() * contactFriction / currentRadius * playerRadius
-        playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed
         
-    else
+   else
         playerSpinSpeed -= airFriction * playdate.getElapsedTime() * playerSpinSpeed
-    end
-    playerSpeed.y += playdate.getElapsedTime() * gravity   
+   end
+   playerSpeed.y += playdate.getElapsedTime() * gravity   
+   if(playerSpeed.x > terminalVelocity)then
+      playerSpeed.x = terminalVelocity
+   elseif (playerSpeed.x < -terminalVelocity) then
+      playerSpeed.x = -terminalVelocity
+   end
+   if(playerSpeed.y > terminalVelocity)then
+      playerSpeed.y = terminalVelocity
+   elseif (playerSpeed.y < -terminalVelocity) then
+      playerSpeed.y = -terminalVelocity
+   end
+   
+   if(playerSpinSpeed > terminalSpinning)then
+      layerSpinSpeed = terminalSpinning
+   elseif (playerSpinSpeed < -terminalSpinning) then
+      layerSpinSpeed = -terminalSpinning
+   end
+   
 end
 
 
