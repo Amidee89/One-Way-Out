@@ -127,8 +127,8 @@ function updatePlayerPosition()
      
    elseif collidedThisFrame == "inner" then
       correctionDirectionVector = playerPosition - circleCenter
-      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - innerRadius)
-      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - innerRadius) 
+      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - innerRadius)
+      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - innerRadius) 
    end
    
    playerRotation += playerSpinSpeed * playdate.getElapsedTime()
