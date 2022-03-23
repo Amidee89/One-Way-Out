@@ -94,47 +94,53 @@ function checkCrank()
 end
 
 function updatePlayerPosition()
+
    playerPosition.y +=  playerSpeed.y * playdate.getElapsedTime()
    playerPosition.x += playerSpeed.x * playdate.getElapsedTime()
 
    checkCollision()
    
-   if collidedThisFrame == "outer" then     
-      local currentSegment = geometry.lineSegment.new(previousPlayerPosition.x,previousPlayerPosition.y,playerPosition.x,playerPosition.y)
-      for i = 1, 10, 1
-      do
-         local currentSegment = geometry.lineSegment.new(previousPlayerPosition.x,previousPlayerPosition.y,playerPosition.x,playerPosition.y)
-           local midpoint = currentSegment:midPoint()
-           for i = 1, 10, 1
-           do
-               midpoint = currentSegment:midPoint()
-               if (checkInnerCircleCollision(circleCenter, currentRadius, midpoint)) then
-                   currentSegment = geometry.lineSegment.new(previousPlayerPosition.x,previousPlayerPosition.y,midpoint.x,midpoint.y)
-               else
-                   currentSegment = geometry.lineSegment.new(midpoint.x,midpoint.y,PlayerPosition.x,PlayerPosition.y)
-               end
-           end
-      end
-
-        if(checkInnerCircleCollision(circleCenter, currentRadius, playerPosition))then
-            -- shift towards circle center 
-            correctionDirectionVector = playerPosition - circleCenter
-            playerPosition.x = playerPosition.x + (correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth)))
-            playerPosition.y = playerPosition.y + (correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth )))  
-        else
-            playerPosition = midpoint:copy()
-        end        
-      --playerPosition = previousPlayerPosition:copy()
+   if collidedThisFrame == "outer" then
+      
+      -- this is how actual intersections look like, but it gets ugly when ball falls vertically or almost so. it would be great to use this,  but I have no idea how to make this work
+      
+      -- local deltaX = playerPosition.x - previousPlayerPosition.x
+      -- 
+      -- local deltaY = playerPosition.x - previousPlayerPosition.x
+      -- if deltax == 0 then
+      --    deltax = .00000001 -- temporary, should make this a separate flow
+      -- end
+      -- 
+      -- m = deltaY/deltaX
+      -- b = playerPosition.y - m*playerPosition.x
+      -- h = circleCenter.x
+      -- k = circleCenter.y
+      -- r = currentRadius - playerRadius - circleLineWidth
+      -- 
+      -- playerPosition.x = (math.sqrt(-b^2 - 2*b*h*m + 2 *b* k - h^2 * m^2 + 2 * h * k * m - k^2 + m^2 * r^2 + r^2) - b * m + h + k * m)/(m^2 + 1) 
+      -- playerPosition.y = (m *(math.sqrt(-b^2 - 2* b* h * m + 2 * b* k - h^2 * m^2 + 2 * h* k* m - k^2 + m^2 * r^2 + r^2) + h + k * m) + b)/(m^2 + 1)
+      
+      -- by far the best fuzzy method of resetting collision, with the added bonus that you get "rolling" from this
+      correctionDirectionVector = playerPosition - circleCenter
+      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth))
+      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth ))  
+     
+   elseif collidedThisFrame == "inner" then
+      correctionDirectionVector = playerPosition - circleCenter
+      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - innerRadius)
+      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - innerRadius) 
    end
-    
+   
    playerRotation += playerSpinSpeed * playdate.getElapsedTime()
-
+   
 end
 
 function updatePlayerSpeed()
 
-      -- case collision with inside of circle 
+      -- case collision with big outside circle 
    if(collidedThisFrame == "outer") then
+      --removing impulse
+      
       originalNormalVector = circleCenter - playerPosition
       normalizedNormal = originalNormalVector:normalized()
       -- bouncing
@@ -146,13 +152,25 @@ function updatePlayerSpeed()
         playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed 
         playerSpeed *= bounceElasticity
         playerSpinSpeed -= playdate.getCrankChange() * contactFriction / currentRadius * playerRadius
-        
-   elseif (collidedThisFrame == "") then
-        playerSpinSpeed -= airFriction * playdate.getElapsedTime() * playerSpinSpeed
-   end
    
-   playerSpeed.y += playdate.getElapsedTime() * gravity   
+   -- case collision with small inside circle 
 
+   elseif (collidedThisFrame == "inner") then
+         originalNormalVector = circleCenter - playerPosition
+         normalizedNormal = originalNormalVector:normalized()
+         -- bouncing
+         playerSpeed = playerSpeed - (normalizedNormal:scaledBy((2 * normalizedNormal:dotProduct(playerSpeed))))
+   
+         -- adding speed from spinning speed and reducing 
+         playerSpeed.x += playerSpinSpeed * normalizedNormal:rightNormal().dx * contactFriction
+         playerSpeed.y += playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
+         playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed 
+         playerSpeed *= bounceElasticity
+   elseif (collidedThisFrame == "") then
+         playerSpinSpeed -= airFriction * playdate.getElapsedTime() * playerSpinSpeed
+   end   
+      playerSpeed.y += playdate.getElapsedTime() * gravity   
+   
    -- to update with math.floor and ceiling if they get implemented in the apis   
    if(playerSpeed.x > terminalVelocity)then
       playerSpeed.x = terminalVelocity
@@ -170,7 +188,6 @@ function updatePlayerSpeed()
    elseif (playerSpinSpeed < -terminalSpinning) then
       layerSpinSpeed = -terminalSpinning
    end
-   
 end
 
 
@@ -196,13 +213,14 @@ end
 function checkCollision()
    if checkOuterCircleCollision(circleCenter, currentRadius, playerPosition) then
         collidedThisFrame = "outer"
-        print("outer", playdate.getElapsedTime())
+        print("outer collision", playdate.getElapsedTime())
    elseif checkInnerCircleCollision(circleCenter, innerRadius, playerPosition) then
         collidedThisFrame = "inner"
-        print("inner", playdate.getElapsedTime())
+        print("inner collision", playdate.getElapsedTime())
 
    else 
        collidedThisFrame = ""
+       print("no collision")
     end
 end
 
