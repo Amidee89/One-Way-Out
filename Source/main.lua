@@ -23,6 +23,8 @@ local currentOpeningSize = 20
 local circleCenter = geometry.point.new(200,120)
 local outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, currentRadius, 0, 0)
 
+local nextRadius = 100
+
 local playerRadius = 10
 local playerPosition = geometry.point.new(180,100)
 local previousPlayerPosition =  playerPosition:copy()
@@ -36,6 +38,7 @@ local collidedThisFrame = false
 local collisionRelocationMagnitude = 0
 
 local innerRadius = 10
+local minimumInnerRadius = 5
 
 local circleLineWidth = 5
 local playerLineWidth = 3
@@ -48,6 +51,7 @@ local terminalVelocity = 400
 local terminalSpinning = 400
 
 local currentCrankPosition = 0
+local gameSpeed = 10
 
 function playdate.update()
     gfx.clear()
@@ -64,10 +68,29 @@ function playdate.update()
     updatePlayerPosition()
     updatePlayerSpeed()
     drawPlayer()
+    checkScore()
     playdate.resetElapsedTime()
 end
+
 function updateCircles()
+   currentRadius -= gameSpeed * playdate.getElapsedTime()
+   innerRadius -= gameSpeed * playdate.getElapsedTime()
+   if innerRadius < minimumInnerRadius then
+      innerRadius = minimumInnerRadius
+   end
+   nextRadius -= gameSpeed * playdate.getElapsedTime()
+   -- gameover condition
+   if (currentRadius - innerRadius <= playerRadius*2) then
+      gameOver()
+   end 
+   
    outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, currentRadius, currentCrankPosition + currentOpeningSize,currentCrankPosition+(360-currentOpeningSize))
+end
+
+function gameOver()
+   innerRadius = 10
+   currentRadius = 50
+   nextRadius = 100
 end
 
 function drawCircles()
@@ -75,6 +98,7 @@ function drawCircles()
     gfx.setStrokeLocation(gfx.kStrokeInside)
     gfx.drawArc(outerCircle)
     gfx.fillCircleAtPoint(circleCenter,innerRadius)
+    gfx.drawCircleAtPoint(circleCenter,nextRadius)
 end
 
 function checkCommands()
@@ -199,13 +223,11 @@ function checkOuterCircleCollision (center, radius, point)
       
       openingBeginning = outerCircle:pointOnArc(0)
       openingEnd = outerCircle:pointOnArc(360-currentOpeningSize)
-      print(openingBeginning)
-      print(openingEnd)
       centerVector =  playerPosition - circleCenter
       beginningVector =  openingBeginning - circleCenter
       endVector = openingEnd - circleCenter
-     -- gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+beginningVector.dx, circleCenter.y+beginningVector.dy)
-      --gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+endVector.dx, circleCenter.y+endVector.dy)
+      gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+beginningVector.dx, circleCenter.y+beginningVector.dy)
+      gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+endVector.dx, circleCenter.y+endVector.dy)
 
       if(areVectorsClockwise(beginningVector, centerVector) and areVectorsClockwise(centerVector, endVector)) then
          return false
@@ -232,14 +254,10 @@ end
 function checkCollision()
    if checkOuterCircleCollision(circleCenter, currentRadius, playerPosition) then
         collidedThisFrame = "outer"
-        print("outer collision", playdate.getElapsedTime())
    elseif checkInnerCircleCollision(circleCenter, innerRadius, playerPosition) then
         collidedThisFrame = "inner"
-        print("inner collision", playdate.getElapsedTime())
-
    else 
        collidedThisFrame = ""
-       print("no collision")
     end
 end
 
@@ -247,7 +265,20 @@ function drawPlayer()
     gfx.setLineWidth(playerLineWidth)
     gfx.drawCircleAtPoint(playerPosition.x, playerPosition.y, playerRadius)
     gfx.drawLine(playerPosition.x,playerPosition.y, playerPosition.x+playerRadius*math.cos(playerRotation),playerPosition.y+playerRadius*math.sin(playerRotation))
+    
 end
+
+function checkScore()
+   
+   if (collidedThisFrame == "" and distanceFromCenter > playerRadius + currentRadius )then
+      innerRadius = currentRadius
+      currentRadius = nextRadius
+      nextRadius = currentRadius + 50
+   end
+end
+
+
+
 
 function debugMovePlayerWithbuttons()
    if playdate.buttonJustPressed(playdate.kButtonUp) then
@@ -270,3 +301,5 @@ end
 function playdate.gameWillResume()
     playdate.resetElapsedTime()
 end
+
+
