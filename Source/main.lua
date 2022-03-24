@@ -19,26 +19,35 @@ playdate.resetElapsedTime()
 
 --gameplay
 local currentRadius = 50
+local currentOpeningSize = 20
+local circleCenter = geometry.point.new(200,120)
+local outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, currentRadius, 0, 0)
+
+local playerRadius = 10
 local playerPosition = geometry.point.new(180,100)
 local previousPlayerPosition =  playerPosition:copy()
-local circleCenter = geometry.point.new(200,120)
+
 local playerSpeed = geometry.vector2D.new(20,10)
-local playerSpinSpeed = 0
-local currentOpeningSize = 20
-local gravity = 400
-local playerRadius = 10
 local playerRotation = 0
+local playerSpinSpeed = 0
+local distanceFromCenter = 0
+
+local collidedThisFrame = false
+local collisionRelocationMagnitude = 0
+
+local innerRadius = 10
+
 local circleLineWidth = 5
 local playerLineWidth = 3
-local distanceFromCenter = 0
-local collisionRelocationMagnitude = 0
+
+local gravity = 400
 local contactFriction = .8
 local bounceElasticity = .8
 local airFriction = .9
-local collidedThisFrame = false
 local terminalVelocity = 400
 local terminalSpinning = 400
-local innerRadius = 10
+
+local currentCrankPosition = 0
 
 function playdate.update()
     gfx.clear()
@@ -47,7 +56,8 @@ function playdate.update()
     collidedThisFrame = ""
     collisionRelocationMagnitude = 0
     previousPlayerPosition = playerPosition:copy()
-    --checkCommands()
+    checkCommands()
+    updateCircles()
     debugMovePlayerWithbuttons()
     checkCrank()
     drawCircles()
@@ -56,27 +66,19 @@ function playdate.update()
     drawPlayer()
     playdate.resetElapsedTime()
 end
+function updateCircles()
+   outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, currentRadius, currentCrankPosition + currentOpeningSize,currentCrankPosition+(360-currentOpeningSize))
+end
 
 function drawCircles()
     gfx.setLineWidth(circleLineWidth)
     gfx.setStrokeLocation(gfx.kStrokeInside)
-    gfx.drawArc(circleCenter.x, circleCenter.y, currentRadius, playdate.getCrankPosition()+currentOpeningSize,playdate.getCrankPosition()+(360-currentOpeningSize))
+    gfx.drawArc(outerCircle)
     gfx.fillCircleAtPoint(circleCenter,innerRadius)
 end
 
 function checkCommands()
-    if playdate.buttonIsPressed(playdate.kButtonUp) then
-        currentRadius -= 10
-        if(currentRadius < playerRadius + circleLineWidth) then
-            currentRadius = playerRadius + circleLineWidth
-        end
-    end
-    if playdate.buttonIsPressed(playdate.kButtonDown) then
-        currentRadius += 10
-        if(currentRadius > 120) then
-            currentRadius = 120
-        end
-    end
+   currentCrankPosition = playdate.getCrankPosition()
 end
 
 function checkCrank()
@@ -193,14 +195,31 @@ end
 
 function checkOuterCircleCollision (center, radius, point)
    distanceFromCenter = point:distanceToPoint(center) 
-   if  distanceFromCenter + playerRadius > currentRadius - circleLineWidth then
+   if distanceFromCenter + playerRadius > currentRadius - circleLineWidth then
+      
+      openingBeginning = outerCircle:pointOnArc(0)
+      openingEnd = outerCircle:pointOnArc(360-currentOpeningSize)
+      print(openingBeginning)
+      print(openingEnd)
+      centerVector =  playerPosition - circleCenter
+      beginningVector =  openingBeginning - circleCenter
+      endVector = openingEnd - circleCenter
+     -- gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+beginningVector.dx, circleCenter.y+beginningVector.dy)
+      --gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+endVector.dx, circleCenter.y+endVector.dy)
 
-       return true
+      if(areVectorsClockwise(beginningVector, centerVector) and areVectorsClockwise(centerVector, endVector)) then
+         return false
+      else  
+         return true
+      end
    else
-        return false
+      return false
    end
 end
-    
+   
+function areVectorsClockwise(v1, v2) 
+  return -v1.dx*v2.dy + v1.dy*v2.dx > 0;
+end 
 function checkInnerCircleCollision (center, radius, point)
      distanceFromCenter = point:distanceToPoint(center) 
      if  distanceFromCenter - playerRadius < radius then
