@@ -73,10 +73,16 @@ function playdate.update()
 end
 
 function updateCircles()
+   if (currentRadius > 100) then
+      gameSpeed += currentRadius/100
+      
+   else
+      gameSpeed = 10
+   end
    currentRadius -= gameSpeed * playdate.getElapsedTime()
    innerRadius -= gameSpeed * playdate.getElapsedTime()
-   if innerRadius < minimumInnerRadius then
-      innerRadius = minimumInnerRadius
+   if innerRadius < playerRadius then
+      innerRadius = playerRadius
    end
    nextRadius -= gameSpeed * playdate.getElapsedTime()
    -- gameover condition
@@ -222,14 +228,14 @@ function checkOuterCircleCollision (center, radius, point)
    if distanceFromCenter + playerRadius > currentRadius - circleLineWidth then
       
       openingBeginning = outerCircle:pointOnArc(0)
-      openingEnd = outerCircle:pointOnArc(360-currentOpeningSize)
+      openingEnd = outerCircle:pointOnArc(outerCircle:length())
       centerVector =  playerPosition - circleCenter
-      beginningVector =  openingBeginning - circleCenter
-      endVector = openingEnd - circleCenter
-      gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+beginningVector.dx, circleCenter.y+beginningVector.dy)
-      gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+endVector.dx, circleCenter.y+endVector.dy)
+      openingBeginningVector =  openingBeginning - circleCenter
+      openingEndVector = openingEnd - circleCenter
+      --gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+openingBeginningVector.dx, circleCenter.y+openingBeginningVector.dy)
+      --gfx.drawLine(circleCenter.x,circleCenter.y,circleCenter.x+openingEndVector.dx, circleCenter.y+openingEndVector.dy)
 
-      if(areVectorsClockwise(beginningVector, centerVector) and areVectorsClockwise(centerVector, endVector)) then
+      if(areVectorsClockwise(openingBeginningVector, centerVector) and areVectorsClockwise(centerVector, openingEndVector)) then
          return false
       else  
          return true
