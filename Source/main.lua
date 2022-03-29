@@ -102,9 +102,14 @@ end
 function drawCircles()
     gfx.setLineWidth(circleLineWidth)
     gfx.setStrokeLocation(gfx.kStrokeInside)
-    gfx.drawArc(outerCircle)
-    gfx.fillCircleAtPoint(circleCenter,innerRadius)
-    gfx.drawCircleAtPoint(circleCenter,nextRadius)
+    circleToDraw = outerCircle:copy()
+    -- rounding to nearest multiple to reduce jitter - TODO this in a decent way when circles are in an array and not hardcoded
+    circleToDraw.radius = (circleToDraw.radius + .5) - (circleToDraw.radius +.5 )% 1
+    gfx.drawArc(circleToDraw)
+    innerRadiusToDraw = (innerRadius + .5) - (innerRadius +.5)% 1
+    nextRadiusToDraw = (nextRadius + .5) - (nextRadius + .5 )% 1
+    gfx.fillCircleAtPoint(circleCenter,innerRadiusToDraw)
+    gfx.drawCircleAtPoint(circleCenter,nextRadiusToDraw)
 end
 
 function checkCommands()
@@ -246,7 +251,7 @@ function checkOuterCircleCollision (center, radius, point)
 end
    
 function areVectorsClockwise(v1, v2) 
-  return -v1.dx*v2.dy + v1.dy*v2.dx > 0;
+  return -v1.dx*v2.dy + v1.dy*v2.dx > 0
 end 
 function checkInnerCircleCollision (center, radius, point)
      distanceFromCenter = point:distanceToPoint(center) 
