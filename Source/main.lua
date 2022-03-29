@@ -104,10 +104,10 @@ function drawCircles()
     gfx.setStrokeLocation(gfx.kStrokeInside)
     circleToDraw = outerCircle:copy()
     -- rounding to nearest multiple to reduce jitter - TODO this in a decent way when circles are in an array and not hardcoded
-    circleToDraw.radius = (circleToDraw.radius + .5) - (circleToDraw.radius +.5 )% 1
+    circleToDraw.radius = roundToNearestMultiple(circleToDraw.radius, 1)
     gfx.drawArc(circleToDraw)
-    innerRadiusToDraw = (innerRadius + .5) - (innerRadius +.5)% 1
-    nextRadiusToDraw = (nextRadius + .5) - (nextRadius + .5 )% 1
+    innerRadiusToDraw = roundToNearestMultiple(innerRadius, 1)
+    nextRadiusToDraw = roundToNearestMultiple(nextRadius, 1)
     gfx.fillCircleAtPoint(circleCenter,innerRadiusToDraw)
     gfx.drawCircleAtPoint(circleCenter,nextRadiusToDraw)
 end
@@ -313,4 +313,7 @@ function playdate.gameWillResume()
     playdate.resetElapsedTime()
 end
 
-
+function roundToNearestMultiple( number, multiple )
+  local half = multiple/2;
+  return number + half - (number + half) % multiple;
+end
