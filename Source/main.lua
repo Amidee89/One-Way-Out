@@ -16,14 +16,15 @@ local crankIndicatorShowing = false
 
 playdate.resetElapsedTime()
 
-
+-- resetting state
+local circles = {}
+local startedUp = false
 --gameplay
-local currentRadius = 50
+local spaceBetweenCircles = 50
+
 local currentOpeningSize = 20
 local circleCenter = geometry.point.new(200,120)
-local outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, currentRadius, 0, 0)
-
-local nextRadius = 100
+local outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, 0, 0, 0)
 
 local playerRadius = 10
 local playerPosition = geometry.point.new(180,100)
@@ -37,7 +38,6 @@ local distanceFromCenter = 0
 local collidedThisFrame = false
 local collisionRelocationMagnitude = 0
 
-local innerRadius = 10
 local minimumInnerRadius = 5
 
 local circleLineWidth = 5
@@ -54,6 +54,10 @@ local currentCrankPosition = 0
 local gameSpeed = 10
 
 function playdate.update()
+   if(not startedUp) then
+      gameOver()
+      startedUp = true
+   end
     gfx.clear()
     playdate.drawFPS(0,0)
     playdate.timer.updateTimers()
@@ -73,30 +77,37 @@ function playdate.update()
 end
 
 function updateCircles()
-   if (currentRadius > 100) then
-      gameSpeed += currentRadius/100
-      
+   
+   
+   if (circles[2]["radius"] > 100) then
+      gameSpeed += circles[2]["radius"]/100 
    else
       gameSpeed = 10
    end
-   currentRadius -= gameSpeed * playdate.getElapsedTime()
-   innerRadius -= gameSpeed * playdate.getElapsedTime()
-   if innerRadius < playerRadius then
-      innerRadius = playerRadius
+   for i=1, #circles,1 do
+    circles[i]["radius"] -= gameSpeed * playdate.getElapsedTime()
    end
-   nextRadius -= gameSpeed * playdate.getElapsedTime()
+ 
+   if circles[1]["radius"]  < playerRadius then
+      circles[1]["radius"] = playerRadius
+   end
+
    -- gameover condition
-   if (currentRadius - innerRadius <= playerRadius*2) then
+   if (circles[2]["radius"] - circles[1]["radius"] <= playerRadius*2) then
       gameOver()
    end 
    
-   outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, currentRadius, currentCrankPosition + currentOpeningSize,currentCrankPosition+(360-currentOpeningSize))
+   outerCircle = geometry.arc.new(circleCenter.x, circleCenter.y, circles[2]["radius"], currentCrankPosition + circles[2]["openingAngle"] + currentOpeningSize,currentCrankPosition + circles[2]["openingAngle"] +(360-currentOpeningSize))
 end
 
 function gameOver()
-   innerRadius = 10
-   currentRadius = 50
-   nextRadius = 100
+   for i=1,11,1 
+   do
+      circles[i] = {
+         openingAngle = math.random(0,360),
+         radius = minimumInnerRadius + (i-1) * spaceBetweenCircles
+      }
+   end
 end
 
 function drawCircles()
@@ -106,10 +117,12 @@ function drawCircles()
     -- rounding to nearest multiple to reduce jitter - TODO this in a decent way when circles are in an array and not hardcoded
     circleToDraw.radius = roundToNearestMultiple(circleToDraw.radius, 1)
     gfx.drawArc(circleToDraw)
-    innerRadiusToDraw = roundToNearestMultiple(innerRadius, 1)
-    nextRadiusToDraw = roundToNearestMultiple(nextRadius, 1)
-    gfx.fillCircleAtPoint(circleCenter,innerRadiusToDraw)
-    gfx.drawCircleAtPoint(circleCenter,nextRadiusToDraw)
+    
+    gfx.fillCircleAtPoint(circleCenter,roundToNearestMultiple(circles[1]["radius"], 1))
+    
+    for i=3,11,1 do
+    gfx.drawCircleAtPoint(circleCenter,roundToNearestMultiple(circles[i]["radius"], 1))
+    end
 end
 
 function checkCommands()
@@ -159,13 +172,13 @@ function updatePlayerPosition()
       
       -- by far the best fuzzy method of resetting collision, with the added bonus that you get "rolling" from this
       correctionDirectionVector = playerPosition - circleCenter
-      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth))
-      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (currentRadius- distanceFromCenter - circleLineWidth ))  
+      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (circles[2]["radius"]- distanceFromCenter - circleLineWidth))
+      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (circles[2]["radius"]- distanceFromCenter - circleLineWidth ))  
      
    elseif collidedThisFrame == "inner" then
       correctionDirectionVector = playerPosition - circleCenter
-      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - innerRadius)
-      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - innerRadius) 
+      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - circles[1]["radius"])
+      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - circles[1]["radius"]) 
    end
    
    playerRotation += playerSpinSpeed * playdate.getElapsedTime()
@@ -188,7 +201,7 @@ function updatePlayerSpeed()
         playerSpeed.y += playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
         playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed 
         playerSpeed *= bounceElasticity
-        playerSpinSpeed -= playdate.getCrankChange() * contactFriction / currentRadius * playerRadius
+        playerSpinSpeed -= playdate.getCrankChange() * contactFriction / circles[2]["radius"] * playerRadius
    
    -- case collision with small inside circle 
 
@@ -230,7 +243,7 @@ end
 
 function checkOuterCircleCollision (center, radius, point)
    distanceFromCenter = point:distanceToPoint(center) 
-   if distanceFromCenter + playerRadius > currentRadius - circleLineWidth then
+   if distanceFromCenter + playerRadius > circles[2]["radius"] - circleLineWidth then
       
       openingBeginning = outerCircle:pointOnArc(0)
       openingEnd = outerCircle:pointOnArc(outerCircle:length())
@@ -263,9 +276,9 @@ function checkInnerCircleCollision (center, radius, point)
 end
  
 function checkCollision()
-   if checkOuterCircleCollision(circleCenter, currentRadius, playerPosition) then
+   if checkOuterCircleCollision(circleCenter, circles[2]["radius"], playerPosition) then
         collidedThisFrame = "outer"
-   elseif checkInnerCircleCollision(circleCenter, innerRadius, playerPosition) then
+   elseif checkInnerCircleCollision(circleCenter, circles[1]["radius"], playerPosition) then
         collidedThisFrame = "inner"
    else 
        collidedThisFrame = ""
@@ -281,10 +294,12 @@ end
 
 function checkScore()
    
-   if (collidedThisFrame == "" and distanceFromCenter > playerRadius + currentRadius )then
-      innerRadius = currentRadius
-      currentRadius = nextRadius
-      nextRadius = currentRadius + 50
+   if (collidedThisFrame == "" and distanceFromCenter > playerRadius + circles[2]["radius"] )then
+      removed = table.remove(circles,1)
+      circles[#circles + 1] = {
+         openingAngle = math.random(0,360),
+         radius = minimumInnerRadius + #circles * spaceBetweenCircles
+      }
    end
 end
 
