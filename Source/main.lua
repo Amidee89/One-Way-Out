@@ -43,7 +43,7 @@ local minimumInnerRadius = 5
 local circleLineWidth = 5
 local playerLineWidth = 3
 
-local gravity = 400
+local gravity = 1000
 local contactFriction = .8
 local bounceElasticity = .8
 local airFriction = .9
@@ -51,7 +51,8 @@ local terminalVelocity = 400
 local terminalSpinning = 400
 
 local currentCrankPosition = 0
-local gameSpeed = 10
+local gameSpeed = 40
+local baseGameSpeed = 20
 
 function playdate.update()
    if(not startedUp) then
@@ -82,10 +83,11 @@ function updateCircles()
    if (circles[2]["radius"] > 100) then
       gameSpeed += circles[2]["radius"]/100 
    else
-      gameSpeed = 10
+      gameSpeed = baseGameSpeed
    end
    for i=1, #circles,1 do
     circles[i]["radius"] -= gameSpeed * playdate.getElapsedTime()
+    print(i,": ", circles[i]["radius"])
    end
  
    if circles[1]["radius"]  < playerRadius then
@@ -298,7 +300,7 @@ function checkScore()
       removed = table.remove(circles,1)
       circles[#circles + 1] = {
          openingAngle = math.random(0,360),
-         radius = minimumInnerRadius + #circles * spaceBetweenCircles
+         radius = circles[1]["radius"] + #circles * spaceBetweenCircles
       }
    end
 end
