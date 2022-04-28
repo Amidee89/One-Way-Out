@@ -174,8 +174,16 @@ function updatePlayerPosition()
       
       -- by far the best fuzzy method of resetting collision, with the added bonus that you get "rolling" from this
       correctionDirectionVector = playerPosition - circleCenter
-      playerPosition.x += correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (circles[2]["radius"]- distanceFromCenter - circleLineWidth))
-      playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (circles[2]["radius"]- distanceFromCenter - circleLineWidth ))  
+      correctionVector = geometry.vector2D.new
+      (
+        correctionDirectionVector.dx / correctionDirectionVector:magnitude() * -(playerRadius - (circles[2]["radius"]- distanceFromCenter - circleLineWidth)),
+        
+        correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - (circles[2]["radius"]- distanceFromCenter - circleLineWidth ))
+      )
+      playerPosition.x += correctionVector.dx
+      playerPosition.y += correctionVector.dy 
+      --playerSpinSpeed += correctionVector.dy
+      
      
    elseif collidedThisFrame == "inner" then
       correctionDirectionVector = playerPosition - circleCenter
@@ -240,6 +248,7 @@ function updatePlayerSpeed()
    elseif (playerSpinSpeed < -terminalSpinning) then
       layerSpinSpeed = -terminalSpinning
    end
+
 end
 
 
