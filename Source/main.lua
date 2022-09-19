@@ -277,6 +277,7 @@ end
 function areVectorsClockwise(v1, v2) 
   return -v1.dx*v2.dy + v1.dy*v2.dx > 0
 end 
+
 function checkInnerCircleCollision (center, radius, point)
      distanceFromCenter = point:distanceToPoint(center) 
      if  distanceFromCenter - playerRadius < radius then
