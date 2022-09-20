@@ -58,6 +58,7 @@ local elapsedTime = 0
 
 function playdate.update()
   elapsedTime = playdate.getElapsedTime()
+    playdate.resetElapsedTime()
    if(not startedUp) then
       gameOver()
       startedUp = true
@@ -77,7 +78,6 @@ function playdate.update()
     updatePlayerSpeed()
     drawPlayer()
     checkScore()
-    playdate.resetElapsedTime()
 end
 
 function updateCircles()
