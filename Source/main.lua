@@ -54,6 +54,9 @@ local currentCrankPosition = 0
 local gameSpeed = 40
 local baseGameSpeed = 20
 
+local gravityX = 0;
+local gravityY = 1;
+
 function playdate.update()
    if(not startedUp) then
       gameOver()
@@ -65,9 +68,9 @@ function playdate.update()
     collidedThisFrame = ""
     collisionRelocationMagnitude = 0
     previousPlayerPosition = playerPosition:copy()
+    changeGravity()
     checkCommands()
     updateCircles()
-    debugMovePlayerWithbuttons()
     checkCrank()
     drawCircles()
     updatePlayerPosition()
@@ -87,7 +90,6 @@ function updateCircles()
    end
    for i=1, #circles,1 do
     circles[i]["radius"] -= gameSpeed * playdate.getElapsedTime()
-    print(i,": ", circles[i]["radius"])
    end
  
    if circles[1]["radius"]  < playerRadius then
@@ -229,7 +231,9 @@ function updatePlayerSpeed()
    elseif (collidedThisFrame == "") then
          playerSpinSpeed -= airFriction * playdate.getElapsedTime() * playerSpinSpeed
    end   
-      playerSpeed.y += playdate.getElapsedTime() * gravity   
+      playerSpeed.y += playdate.getElapsedTime() * (gravity * gravityY)  
+      playerSpeed.x += playdate.getElapsedTime() * (gravity * gravityX)  
+            
    
    -- to update with math.floor and ceiling if they get implemented in the apis   
    if(playerSpeed.x > terminalVelocity)then
@@ -318,22 +322,42 @@ end
 
 
 
-function debugMovePlayerWithbuttons()
+function changeGravity()
+  gfx.setLineWidth(2)
+  gfx.setStrokeLocation(gfx.kStrokeInside)
+  
    if playdate.buttonJustPressed(playdate.kButtonUp) then
-       playerSpeed.dy -= 100
+     gravityY = -1
+     gravityX = 0
+     gfx.drawLine(0,2,320,2)
    end
    if playdate.buttonJustPressed(playdate.kButtonDown) then
-        playerSpeed.dy += 100
+    gravityY = 1
+    gravityX = 0
 
    end
    if playdate.buttonJustPressed(playdate.kButtonLeft) then
-        playerSpeed.dx -= 100
+      gravityY = 0
+       gravityX = -1
    
    end
    if playdate.buttonJustPressed(playdate.kButtonRight) then
-     playerSpeed.dx += 100
-     
+      gravityY = 0
+      gravityX = 1
    end 
+   
+   if(gravityY ==-1) then
+     gfx.drawLine(0,2,400,2)
+   end
+   if(gravityY ==1) then
+      gfx.drawLine(0,238,400,238)
+    end
+    if(gravityX ==-1) then
+       gfx.drawLine(2,0,2,240)
+     end
+     if(gravityX ==1) then
+        gfx.drawLine(398,0,398,240)
+      end
 end
 
 function playdate.gameWillResume()
