@@ -92,7 +92,6 @@ function updateCircles()
    end
    for i=1, #circles,1 do
     circles[i]["radius"] -= gameSpeed * elapsedTime
-    print(i,": ", circles[i]["radius"])
    end
  
    if circles[1]["radius"]  < playerRadius then
@@ -234,8 +233,8 @@ function updatePlayerSpeed()
    elseif (collidedThisFrame == "") then
          playerSpinSpeed -= airFriction * elapsedTime * playerSpinSpeed
    end   
-      playerSpeed.y += playdate.getElapsedTime() * (gravity * gravityY)  
-      playerSpeed.x += playdate.getElapsedTime() * (gravity * gravityX)  
+      playerSpeed.y += elapsedTime * (gravity * gravityY)  
+      playerSpeed.x += elapsedTime * (gravity * gravityX)  
             
 
    -- to update with math.floor and ceiling if they get implemented in the apis   
