@@ -53,11 +53,14 @@ local terminalSpinning = 400
 local currentCrankPosition = 0
 local gameSpeed = 40
 local baseGameSpeed = 20
-
 local gravityX = 0;
 local gravityY = 1;
 
+local elapsedTime = 0
+
 function playdate.update()
+  elapsedTime = playdate.getElapsedTime()
+  playdate.resetElapsedTime()
    if(not startedUp) then
       gameOver()
       startedUp = true
@@ -77,7 +80,6 @@ function playdate.update()
     updatePlayerSpeed()
     drawPlayer()
     checkScore()
-    playdate.resetElapsedTime()
 end
 
 function updateCircles()
@@ -89,7 +91,8 @@ function updateCircles()
       gameSpeed = baseGameSpeed
    end
    for i=1, #circles,1 do
-    circles[i]["radius"] -= gameSpeed * playdate.getElapsedTime()
+    circles[i]["radius"] -= gameSpeed * elapsedTime
+    print(i,": ", circles[i]["radius"])
    end
  
    if circles[1]["radius"]  < playerRadius then
@@ -149,8 +152,8 @@ end
 
 function updatePlayerPosition()
 
-   playerPosition.y +=  playerSpeed.y * playdate.getElapsedTime()
-   playerPosition.x += playerSpeed.x * playdate.getElapsedTime()
+   playerPosition.y +=  playerSpeed.y * elapsedTime
+   playerPosition.x += playerSpeed.x * elapsedTime
 
    checkCollision()
    
@@ -193,7 +196,7 @@ function updatePlayerPosition()
       playerPosition.y += correctionDirectionVector.dy / correctionDirectionVector:magnitude() * -(playerRadius - playerLineWidth - circles[1]["radius"]) 
    end
    
-   playerRotation += playerSpinSpeed * playdate.getElapsedTime()
+   playerRotation += playerSpinSpeed * elapsedTime
    
 end
 
@@ -211,7 +214,7 @@ function updatePlayerSpeed()
         -- adding speed from spinning speed and reducing 
         playerSpeed.x += playerSpinSpeed * normalizedNormal:rightNormal().dx * contactFriction
         playerSpeed.y += playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
-        playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed 
+        playerSpinSpeed -= contactFriction * elapsedTime * playerSpinSpeed 
         playerSpeed *= bounceElasticity
         playerSpinSpeed -= playdate.getCrankChange() * contactFriction / circles[2]["radius"] * playerRadius
    
@@ -226,15 +229,15 @@ function updatePlayerSpeed()
          -- adding speed from spinning speed and reducing 
          playerSpeed.x += playerSpinSpeed * normalizedNormal:rightNormal().dx * contactFriction
          playerSpeed.y += playerSpinSpeed * normalizedNormal:rightNormal().dy * contactFriction
-         playerSpinSpeed -= contactFriction * playdate.getElapsedTime() * playerSpinSpeed 
+         playerSpinSpeed -= contactFriction * elapsedTime * playerSpinSpeed 
          playerSpeed *= bounceElasticity
    elseif (collidedThisFrame == "") then
-         playerSpinSpeed -= airFriction * playdate.getElapsedTime() * playerSpinSpeed
+         playerSpinSpeed -= airFriction * elapsedTime * playerSpinSpeed
    end   
       playerSpeed.y += playdate.getElapsedTime() * (gravity * gravityY)  
       playerSpeed.x += playdate.getElapsedTime() * (gravity * gravityX)  
             
-   
+
    -- to update with math.floor and ceiling if they get implemented in the apis   
    if(playerSpeed.x > terminalVelocity)then
       playerSpeed.x = terminalVelocity
