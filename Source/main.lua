@@ -53,10 +53,12 @@ local terminalSpinning = 400
 local currentCrankPosition = 0
 local gameSpeed = 40
 local baseGameSpeed = 20
-local gravityX = 0;
-local gravityY = 1;
+local gravityX = 0
+local gravityY = 1
 
 local elapsedTime = 0
+
+local ballMode = false
 
 function playdate.update()
   elapsedTime = playdate.getElapsedTime()
@@ -132,7 +134,17 @@ function drawCircles()
 end
 
 function checkCommands()
+   
+   if(playdate.buttonJustPressed(playdate.kButtonA)) then
+    ballMode = not ballMode
+    print(ballMode)
+   end
+   
+   if(not ballMode) then
    currentCrankPosition = playdate.getCrankPosition()
+   end
+   
+ 
 end
 
 function checkCrank()
@@ -200,7 +212,9 @@ function updatePlayerPosition()
 end
 
 function updatePlayerSpeed()
-
+  if (ballMode) then
+    playerSpinSpeed -= playdate.getCrankChange()
+  end
       -- case collision with big outside circle 
    if(collidedThisFrame == "outer") then
       --removing impulse
