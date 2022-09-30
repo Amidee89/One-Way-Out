@@ -58,7 +58,7 @@ local gravityY = 1
 
 local elapsedTime = 0
 
-local ballMode = false
+local ballMode = true
 
 function playdate.update()
   elapsedTime = playdate.getElapsedTime()
@@ -68,7 +68,6 @@ function playdate.update()
       startedUp = true
    end
     gfx.clear()
-    playdate.drawFPS(0,0)
     playdate.timer.updateTimers()
     collidedThisFrame = ""
     collisionRelocationMagnitude = 0
@@ -82,6 +81,7 @@ function playdate.update()
     updatePlayerSpeed()
     drawPlayer()
     checkScore()
+    drawOverlays()
 end
 
 function updateCircles()
@@ -339,22 +339,20 @@ end
 
 
 function changeGravity()
-  gfx.setLineWidth(2)
-  gfx.setStrokeLocation(gfx.kStrokeInside)
   
    if playdate.buttonJustPressed(playdate.kButtonUp) then
      gravityY = -1
      gravityX = 0
-     gfx.drawLine(0,2,320,2)
    end
    if playdate.buttonJustPressed(playdate.kButtonDown) then
     gravityY = 1
     gravityX = 0
+    end
 
    end
    if playdate.buttonJustPressed(playdate.kButtonLeft) then
       gravityY = 0
-       gravityX = -1
+      gravityX = -1
    
    end
    if playdate.buttonJustPressed(playdate.kButtonRight) then
@@ -362,18 +360,27 @@ function changeGravity()
       gravityX = 1
    end 
    
-   if(gravityY ==-1) then
-     gfx.drawLine(0,2,400,2)
-   end
-   if(gravityY ==1) then
-      gfx.drawLine(0,238,400,238)
-    end
-    if(gravityX ==-1) then
-       gfx.drawLine(2,0,2,240)
-     end
-     if(gravityX ==1) then
-        gfx.drawLine(398,0,398,240)
-      end
+   
+end
+
+function drawOverlays()
+  gfx.setLineWidth(2)
+  gfx.setStrokeLocation(gfx.kStrokeInside)
+  if(gravityY ==-1) then
+    gfx.drawRoundRect(10, 2, 380, 8, 5)
+  end
+  if(gravityY ==1) then
+    gfx.drawRoundRect(10, 230, 380, 8, 5)
+  end
+  if(gravityX ==-1) then
+    gfx.drawRoundRect( 2, 8, 8, 224 , 5)
+  end
+  if(gravityX ==1) then
+    gfx.drawRoundRect( 390, 8, 8, 224 , 5)
+  end  
+  
+  -- playdate.drawFPS(0,0)
+
 end
 
 function playdate.gameWillResume()
