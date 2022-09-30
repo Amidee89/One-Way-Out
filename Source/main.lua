@@ -344,13 +344,12 @@ function changeGravity()
      gravityY = -1
      gravityX = 0
    end
+   
    if playdate.buttonJustPressed(playdate.kButtonDown) then
     gravityY = 1
     gravityX = 0
-    end
-
-   end
-   if playdate.buttonJustPressed(playdate.kButtonLeft) then
+  end
+  if playdate.buttonJustPressed(playdate.kButtonLeft) then
       gravityY = 0
       gravityX = -1
    
@@ -359,8 +358,7 @@ function changeGravity()
       gravityY = 0
       gravityX = 1
    end 
-   
-   
+
 end
 
 function drawOverlays()
